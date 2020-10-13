@@ -6,6 +6,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
+const users = require('./routes/api/users');
+
 const port = process.env.PORT || 4000;
 
 const app = express();
@@ -23,5 +25,8 @@ mongoose.connect(process.env.DATABASE_URL, {
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', () => console.log('App successfully connected to mongoose...'));
+
+// API Routes
+app.use('/api/users', users);
 
 app.listen(port, () => console.log(`Server running on port ${port}...`));

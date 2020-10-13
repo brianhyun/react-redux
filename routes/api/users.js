@@ -9,55 +9,61 @@ const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
 const validateRegisterInput = require('../../validation/register');
 const validateLoginInput = require('../../validation/login');
-const exists = require('../../utils/auth');
+const emailOrUsernameExists = require('../../utils/auth');
 
 const router = express.Router();
 
 router.post('/register', (req, res, next) => {
     // Validate Register Input
-    const userInput = req.body;
-    const { errors, isValid } = validateRegisterInput(userInput);
+    const { errors: validationErrors, isValid } = validateRegisterInput(
+        req.body
+    );
 
     // Check Validation Results
     if (!isValid) {
-        return res.status(400).json(errors);
+        return res.status(400).json(validationErrors);
     }
 
     // Check If Email and Username Already Exist in Database
-    const email = userInput.email;
-    const username = userInput.username;
-    const { errors, exists } = exists(email, username);
+    emailOrUsernameExists(req.body)
+        .then((data) => {
+            if (data.itExists) {
+                return res.status(400).json(data.errors);
+            } else {
+                // Create New User
+                const newUser = new User({
+                    name: req.body.name,
+                    username: req.body.username,
+                    email: req.body.email,
+                });
 
-    if (exists) {
-        return res.status(400).json(errors);
-    }
+                // Hash Password
+                const saltRounds = 10;
+                bcrypt.hash(req.body.password, saltRounds, function (
+                    err,
+                    hash
+                ) {
+                    if (err) return console.error(err);
 
-    // Create New User
-    const newUser = {
-        name: req.body.name,
-        email: req.body.email,
-    };
+                    // Override Password with Hash
+                    newUser.password = hash;
 
-    // Hash Password
-    const saltRounds = 10;
-    bcrypt.hash(userInput.password, saltRounds, function (err, hash) {
-        if (err) return console.error(err);
-
-        // Override Password with Hash
-        newUser.password = hash;
-
-        // Save User to Database
-        newUser
-            .save()
-            .then((user) => res.json(user))
-            .catch((err) => console.error(err));
-    });
+                    // Save User to Database
+                    newUser
+                        .save()
+                        .then((user) => res.json(user))
+                        .catch((err) => console.error(err));
+                });
+            }
+        })
+        .catch((err) => {
+            console.error(err);
+        });
 });
 
 router.post('/login', (req, res, next) => {
     // Validate Input
-    const userInput = req.body;
-    const { errors, isValid } = validateLoginInput(userInput);
+    const { errors, isValid } = validateLoginInput(req.body);
 
     // Check Validation Results
     if (!isValid) {
@@ -65,8 +71,8 @@ router.post('/login', (req, res, next) => {
     }
 
     // Check If User Exists
-    const email = userInput.email;
-    const password = userInput.password;
+    const email = req.body.email;
+    const password = req.body.password;
 
     User.findOne({ email }, (err, user) => {
         if (err) return console.error(err);

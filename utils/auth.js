@@ -1,42 +1,35 @@
-const validator = require('validator');
 const isEmpty = require('is-empty');
 
 const User = require('../models/User');
 
-function exists(email, username) {
+async function emailOrUsernameExists(data) {
+    const email = data.email;
+    const username = data.username;
     let errors = {};
 
-    if (existsInUserCollection(email)) {
-        errors.email = 'Email address is already in use.';
-    }
-
-    if (existsInUserCollection(username)) {
-        errors.username = 'Username is already taken.';
-    }
+    await User.findOne({ email })
+        .then((user) => {
+            if (user) {
+                errors.email = 'Email address is already in use.';
+            }
+        })
+        .then(() => {
+            return User.findOne({ username });
+        })
+        .then((user) => {
+            if (user) {
+                errors.username =
+                    'An account with that username already exists.';
+            }
+        })
+        .catch((err) => {
+            if (err) console.error(err);
+        });
 
     return {
         errors,
-        exists: !isEmpty(errors),
+        itExists: !isEmpty(errors),
     };
 }
 
-function existsInUserCollection(data) {
-    let exists = false;
-    let context = '';
-
-    if (validator.isEmail(data)) {
-        context = 'email';
-    } else {
-        context = 'username';
-    }
-
-    User.findOne({ context: data }, (err, user) => {
-        if (err) return console.error(err);
-
-        exists = user ? true : false;
-    });
-
-    return exists;
-}
-
-module.exports = exists;
+module.exports = emailOrUsernameExists;
