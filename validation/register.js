@@ -18,7 +18,7 @@ function validateRegisterInput(data) {
 
     // Username Checks
     if (validator.isEmpty(data.username)) {
-        errors.username = 'First name field is required';
+        errors.username = 'Username field is required';
     }
 
     // Email Checks

@@ -18,8 +18,7 @@ async function emailOrUsernameExists(data) {
         })
         .then((user) => {
             if (user) {
-                errors.username =
-                    'An account with that username already exists.';
+                errors.username = 'That username is already taken.';
             }
         })
         .catch((err) => {

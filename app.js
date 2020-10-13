@@ -5,8 +5,10 @@ if (process.env.NODE_DEV !== 'production') {
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const passport = require('passport');
 
 const users = require('./routes/api/users');
+const passportConfiguration = require('./config/passport');
 
 const port = process.env.PORT || 4000;
 
@@ -25,6 +27,10 @@ mongoose.connect(process.env.DATABASE_URL, {
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', () => console.log('App successfully connected to mongoose...'));
+
+// Client Request Authentication with Passport Middleware
+app.use(passport.initialize());
+passportConfiguration(passport);
 
 // API Routes
 app.use('/api/users', users);

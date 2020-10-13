@@ -71,10 +71,10 @@ router.post('/login', (req, res, next) => {
     }
 
     // Check If User Exists
-    const email = req.body.email;
+    const username = req.body.username;
     const password = req.body.password;
 
-    User.findOne({ email }, (err, user) => {
+    User.findOne({ username }, (err, user) => {
         if (err) return console.error(err);
 
         if (user) {
@@ -82,29 +82,29 @@ router.post('/login', (req, res, next) => {
                 if (isMatch) {
                     // Create JSON Web Token
                     const payload = {
-                        email: email,
+                        id: user.id,
+                        username: username,
                     };
 
                     jwt.sign(
                         payload,
-                        process.env.JWT_PRIVATE_KET,
+                        process.env.JWT_PRIVATE_KEY,
                         { expiresIn: '1h' },
                         (err, token) => {
                             if (err) return console.error(err);
 
-                            console.log('JWT: ', token);
+                            res.send(token);
                         }
                     );
                 } else {
-                    return res.setStatus(400).json({
-                        errorMessage: 'Password entered is incorrect.',
+                    return res.status(400).json({
+                        password: 'Password entered is incorrect.',
                     });
                 }
             });
         } else {
-            return res.setStatus(400).json({
-                errorMessage:
-                    'The account with that email address cannot be found.',
+            return res.status(400).json({
+                username: 'An account with that username cannot be found.',
             });
         }
     });
